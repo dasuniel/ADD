@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:18
+    container_name: lab01_sakila_postgres
+    environment:
+      POSTGRES_PASSWORD: "1234"
+      POSTGRES_USER: "postgres"
+      POSTGRES_DB: "sakila"
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sakila"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - sakila-network
+
+  web:
+    build: ./web
+    container_name: lab01_sakila_web
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: "postgresql+psycopg2://postgres:1234@db:5432/sakila"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - sakila-network
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+    driver: local
+
+networks:
+  sakila-network:
+    driver: bridge
