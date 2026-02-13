@@ -2,7 +2,7 @@
 
 **Estudiante**: Daniel Rosas
 **Fecha de entrega**: 13 de Febrero 2026  
-**Curso**: Bases de Datos  
+**Curso**: ADD  
 
 ---
 
