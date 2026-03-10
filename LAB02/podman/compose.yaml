@@ -1,0 +1,83 @@
+name: lab02
+
+services:
+
+  # ── OLTP: Base de datos operacional AdventureWorks ──────────────────────
+  oltp_db:
+    image: postgres:16
+    container_name: lab02_oltp_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       adventureworks_oltp
+      POSTGRES_USER:     postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5434:5432"          # Expuesto en 5434 para no conflictuar con lab01
+    volumes:
+      - oltp_data:/var/lib/postgresql/data
+      - ../db/oltp:/docker-entrypoint-initdb.d   # Carga schema + datos al iniciar
+    networks:
+      - lab02_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d adventureworks_oltp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── OLAP: Data Warehouse (star schema) ──────────────────────────────────
+  olap_db:
+    image: postgres:16
+    container_name: lab02_olap_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       adventureworks_dw
+      POSTGRES_USER:     postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5433:5432"          # Puerto 5433 para el DW
+    volumes:
+      - olap_data:/var/lib/postgresql/data
+      - ../db/olap:/docker-entrypoint-initdb.d   # Carga schema OLAP al iniciar
+    networks:
+      - lab02_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d adventureworks_dw"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── ETL + Web App ───────────────────────────────────────────────────────
+  etl_web:
+    build:
+      context: ..
+      dockerfile: app/Dockerfile
+    container_name: lab02_etl_web
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      # Sobreescribir hosts para que apunten a los contenedores
+      OLTP_HOST: oltp_db
+      OLTP_PORT: 5432
+      OLAP_HOST: olap_db
+      OLAP_PORT: 5432
+    ports:
+      - "8001:8000"          # Puerto 8001 para no conflictuar con lab01
+    volumes:
+      - ../logs:/app/logs
+    depends_on:
+      oltp_db:
+        condition: service_healthy
+      olap_db:
+        condition: service_healthy
+    networks:
+      - lab02_net
+
+volumes:
+  oltp_data:
+  olap_data:
+
+networks:
+  lab02_net:
+    driver: bridge

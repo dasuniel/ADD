@@ -1,0 +1,58 @@
+# ============================================================
+# Configuración General del Proyecto ETL - Lab02
+# ============================================================
+
+project:
+  name: "AdventureWorks ETL"
+  version: "1.0.0"
+  description: "Pipeline ETL de OLTP a OLAP para AdventureWorks"
+
+databases:
+  oltp:
+    host: "${OLTP_HOST}"
+    port: "${OLTP_PORT}"
+    database: "${OLTP_DB}"
+    username: "${OLTP_USER}"
+    password: "${OLTP_PASSWORD}"
+    schema: "sales"
+    pool_size: 5
+    max_overflow: 10
+
+  olap:
+    host: "${OLAP_HOST}"
+    port: "${OLAP_PORT}"
+    database: "${OLAP_DB}"
+    username: "${OLAP_USER}"
+    password: "${OLAP_PASSWORD}"
+    schema: "dw"
+    pool_size: 5
+    max_overflow: 10
+
+etl:
+  batch_size: 1000
+  date_start: "2011-01-01"
+  date_end: "2015-12-31"
+  pipelines:
+    - name: "date_pipeline"
+      description: "Carga dimensión fecha"
+      enabled: true
+    - name: "territory_pipeline"
+      description: "Carga dimensión territorio"
+      enabled: true
+    - name: "customer_pipeline"
+      description: "Carga dimensión cliente"
+      enabled: true
+    - name: "product_pipeline"
+      description: "Carga dimensión producto"
+      enabled: true
+    - name: "sales_pipeline"
+      description: "Carga hechos de ventas y órdenes"
+      enabled: true
+    - name: "aggregation_pipeline"
+      description: "Calcula agregaciones (canasta, cohortes, márgenes)"
+      enabled: true
+
+web:
+  host: "0.0.0.0"
+  port: 8000
+  debug: false
